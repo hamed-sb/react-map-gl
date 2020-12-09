@@ -66,7 +66,8 @@ const propTypes = {
   bearing: PropTypes.number /** Specify the bearing of the viewport */,
   pitch: PropTypes.number /** Specify the pitch of the viewport */,
   // Note: Non-public API, see https://github.com/mapbox/mapbox-gl-js/issues/1137
-  altitude: PropTypes.number /** Altitude of the viewport camera. Default 1.5 "screen heights" */
+  altitude: PropTypes.number /** Altitude of the viewport camera. Default 1.5 "screen heights" */,
+  padding: PropTypes.object /** Sets the padding in pixels around the viewport. */
 };
 
 const defaultProps = {
@@ -111,6 +112,13 @@ export type ViewState = {
   altitude?: number
 };
 
+export type PaddingOptions = {
+  top?: number,
+  bottom?: number,
+  right?: number,
+  left?: number
+};
+
 type Props = {
   mapboxgl?: MapboxGL,
   container: any,
@@ -135,7 +143,8 @@ type Props = {
   bearing: number,
   pitch: number,
   altitude?: number,
-  mapOptions: any
+  mapOptions: any,
+  padding?: PaddingOptions
 };
 
 // Try to get access token from URL, env, local storage or config
@@ -322,6 +331,10 @@ export default class Mapbox {
         mapOptions.transformRequest = props.transformRequest;
       }
       this._map = new this.mapboxgl.Map(Object.assign({}, mapOptions, props.mapOptions));
+
+      if (props.padding){
+        this._map.setPadding(props.padding)
+      }
 
       // Attach optional onLoad function
       this._map.once('load', props.onLoad);

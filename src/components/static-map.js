@@ -34,6 +34,7 @@ import {MAPBOX_LIMITS} from '../utils/map-state';
 import MapContext from './map-context';
 
 import type {ViewState} from '../mapbox/mapbox';
+import type {PaddingOptions} from '../mapbox/mapbox';
 
 /* eslint-disable max-len */
 const TOKEN_DOC_URL = 'https://visgl.github.io/react-map-gl/docs/get-started/mapbox-tokens';
@@ -50,6 +51,13 @@ const CONTAINER_STYLE = {
   height: '100%',
   overflow: 'hidden'
 };
+
+const DEFAULT_PADDING = {
+  top: 0,
+  bottom: 0,
+  right: 0,
+  left: 0
+}
 
 const propTypes = Object.assign({}, Mapbox.propTypes, {
   /** The dimensions of the map **/
@@ -100,14 +108,14 @@ export type StaticMapProps = {
   onError: Function,
   onResize: Function,
   mapStyle: any,
-  visible: boolean,
   viewState?: ViewState,
   longitude: number,
   latitude: number,
   zoom: number,
   bearing: number,
   pitch: number,
-  altitude?: number
+  altitude?: number,
+  padding?: PaddingOptions
 };
 
 type State = {
@@ -188,10 +196,10 @@ export default class StaticMap extends PureComponent<StaticMapProps, State> {
   };
 
   // Note: needs to be called after render (e.g. in componentDidUpdate)
-  _updateMapSize(width: number, height: number) {
-    if (this._width !== width || this._height !== height) {
-      this._width = width;
-      this._height = height;
+  _updateMapSize(size: {width: number, height: number}) {
+    if (this._width !== size.width || this._height !== size.height) {
+      this._width = size.width;
+      this._height = size.height;
       this._updateMapProps(this.props);
     }
   }
@@ -256,9 +264,29 @@ export default class StaticMap extends PureComponent<StaticMapProps, State> {
     return null;
   }
 
+  _getPaddingSize(size: {width: number, height: number}) {
+    const padding = Object.assign({},DEFAULT_PADDING, this.props.padding);
+    let width = size.width - padding.left - padding.right;
+    let height = size.height - padding.top - padding.bottom;
+    if (width < 0) {
+      width = Math.abs(width)
+      const {left,right} = padding;
+      padding.left = size.width - right;
+      padding.right = size.width - left;
+    }
+    if (height < 0) {
+      height = Math.abs(height);
+      const {top,bottom} = padding;
+      padding.top = size.height - bottom;
+      padding.bottom = size.height - top;
+    }
+    return {width,height,padding};
+  }
+
   _renderOverlays(dimensions: {width: number, height: number}) {
-    const {width, height} = dimensions;
-    this._updateMapSize(width, height);
+    this._updateMapSize(dimensions);
+    const {width, height, padding} = this._getPaddingSize(dimensions);
+    const overlaysStyle = Object.assign({},{position: 'absolute', overflow: 'hidden'},padding);
 
     return (
       <MapContext.Consumer>
@@ -277,7 +305,7 @@ export default class StaticMap extends PureComponent<StaticMapProps, State> {
           };
           return (
             <MapContext.Provider value={context}>
-              <div key="map-overlays" className="overlays" style={CONTAINER_STYLE}>
+              <div key="map-overlays" className="overlays" style={overlaysStyle}>
                 {this.props.children}
               </div>
             </MapContext.Provider>

@@ -412,12 +412,21 @@ export default class Mapbox {
 
     const viewportChanged = this._updateMapViewport(oldProps, newProps);
     const sizeChanged = this._updateMapSize(oldProps, newProps);
+    const paddingChanged = this._updatePadding(oldProps, newProps);
 
-    if (!newProps.asyncRender && (viewportChanged || sizeChanged)) {
+    if (!newProps.asyncRender && (viewportChanged || sizeChanged || paddingChanged)) {
       this.redraw();
     }
 
     this.props = newProps;
+  }
+
+  _updatePadding(oldProps: any, newProps: Props) {
+    const paddingChanged = oldProps.padding !== newProps.padding
+    if (paddingChanged) {
+      this._map.setPadding(newProps.padding)
+    }
+    return paddingChanged
   }
 
   // Note: needs to be called after render (e.g. in componentDidUpdate)
